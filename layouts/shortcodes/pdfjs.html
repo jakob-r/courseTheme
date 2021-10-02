@@ -2,24 +2,25 @@
 
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@2.9.359/build/pdf.min.js" integrity="sha256-hEmjt7z3bB53X/awJyV81gmBLpVw2mj7EsvoJelZWow=" crossorigin="anonymous"></script>
 {{ $pdf_file := .Get "file" }}
+{{ $pdf_id := replaceRE "[.-]" "_" $pdf_file }}
 {{ $pdf_url :=  path.Join .Page.Dir $pdf_file }}
 {{ $pdf_url := $pdf_url | absURL }}
 <div class="pdf">
-<div id="paginator">
-    <button class="btn btn-primary" id="prev">Previous</button>
+<div class="pdf-paginator" id="paginator_{{- $pdf_id -}}">
+    <button class="btn btn-primary" id="prev_{{- $pdf_id -}}">Previous</button>
     &nbsp;
-    <span>Page: <span id="page_num"></span> / <span id="page_count"></span></span>
+    <span>Page: <span id="page_num_{{- $pdf_id -}}"></span> / <span id="page_count_{{- $pdf_id -}}"></span></span>
     &nbsp;
-    <button class="btn btn-primary" id="next">Next</button>
-    <a href="{{ $pdf_url }}" target="_blank"><button class="btn btn-secondary" id="next">PDF</button></a>
+    <button class="btn btn-primary" id="next_{{- $pdf_id -}}">Next</button>
+    <a href="{{ $pdf_url }}" target="_blank"><button class="btn btn-secondary" id="next_{{- $pdf_id -}}">PDF</button></a>
 </div>
-<div id="embed-pdf-container">
-    <canvas id="the-canvas"></canvas>
+<div id="embed-pdf-container_{{- $pdf_id -}}">
+    <canvas class="pdf-canvas" id="the-canvas_{{- $pdf_id -}}"></canvas>
 </div>
 </div>
 
 <script type="text/javascript">
-window.onload = function() {
+window.addEventListener("load",function(){
 // If absolute URL from the remote server is provided, configure the CORS
 // header on that server.
 var url = '{{ $pdf_url }}';
@@ -37,8 +38,8 @@ var pdfDoc = null,
     pageRendering = false,
     pageNumPending = null,
     scale = 3,
-    canvas = document.getElementById('the-canvas'),
-    ctx = canvas.getContext('2d');
+    canvas_{{ safeJS $pdf_id }} = document.getElementById('the-canvas_{{ safeJS $pdf_id }}'),
+    ctx = canvas_{{ safeJS $pdf_id }}.getContext('2d');
 
 /**
  * Get page info from document, resize canvas accordingly, and render page.
@@ -49,8 +50,8 @@ function renderPage(num) {
   // Using promise to fetch the page
   pdfDoc.getPage(num).then(function(page) {
     var viewport = page.getViewport({scale: scale});
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+    canvas_{{ safeJS $pdf_id }}.height = viewport.height;
+    canvas_{{ safeJS $pdf_id }}.width = viewport.width;
 
     // Render PDF page into canvas context
     var renderContext = {
@@ -71,14 +72,14 @@ function renderPage(num) {
   });
 
   // Update page counters
-  document.getElementById('page_num').textContent = num;
+  document.getElementById('page_num_{{ safeJS $pdf_id }}').textContent = num;
 }
 
 /**
  * If another page rendering in progress, waits until the rendering is
  * finised. Otherwise, executes rendering immediately.
  */
-function queueRenderPage(num) {
+function queuerenderPage(num) {
   if (pageRendering) {
     pageNumPending = num;
   } else {
@@ -90,7 +91,7 @@ function queueRenderPage(num) {
  * Optionally hides the paginator
  */
 if (hidePaginator == "true") {
-  document.getElementById("paginator").style.display = 'none';
+  document.getElementById("paginator_{{ safeJS $pdf_id }}").style.display = 'none';
 }
 
 /**
@@ -101,9 +102,9 @@ function onPrevPage() {
     return;
   }
   pageNum--;
-  queueRenderPage(pageNum);
+  queuerenderPage(pageNum);
 }
-document.getElementById('prev').addEventListener('click', onPrevPage);
+document.getElementById('prev_{{ safeJS $pdf_id }}').addEventListener('click', onPrevPage);
 
 /**
  * Displays next page.
@@ -113,20 +114,20 @@ function onNextPage() {
     return;
   }
   pageNum++;
-  queueRenderPage(pageNum);
+  queuerenderPage(pageNum);
 }
-document.getElementById('next').addEventListener('click', onNextPage);
+document.getElementById('next_{{ safeJS $pdf_id }}').addEventListener('click', onNextPage);
 
 /**
  * Asynchronously downloads PDF.
  */
 pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
   pdfDoc = pdfDoc_;
-  document.getElementById('page_count').textContent = pdfDoc.numPages;
+  document.getElementById('page_count_{{ safeJS $pdf_id }}').textContent = pdfDoc.numPages;
 
   // Initial/first page rendering
   renderPage(pageNum);
 });
-}
+})
 
 </script>
