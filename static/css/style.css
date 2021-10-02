@@ -153,13 +153,13 @@ div.pdf object {
 
 /* pdfjs */
 
-#the-canvas {
+canvas.pdf-canvas {
   border: 1px solid #888888;
   direction: ltr;
   width: 100%;
   height: auto;
 }
-#paginator{
+div.pdf div.pdf-paginator{
     text-align: center;
     margin-bottom: 10px;
 }
